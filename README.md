@@ -1,10 +1,10 @@
-# 🚀 Finoviq AI
+# Finoviq AI
 
 An AI-powered intelligent investment platform that combines Machine Learning, Deep Learning, Reinforcement Learning, and Explainable AI to help investors make data-driven investment decisions.
 
 ---
 
-## 📌 Features
+## Features
 
 - Historical stock data collection from Yahoo Finance
 - ETL (Extract, Transform, Load) pipeline
@@ -18,7 +18,7 @@ An AI-powered intelligent investment platform that combines Machine Learning, De
 
 ---
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 Finoviq/
@@ -46,7 +46,7 @@ Finoviq/
 
 ---
 
-## ⚙️ Tech Stack
+##  Tech Stack
 
 ### Backend
 - Python
@@ -75,7 +75,7 @@ Finoviq/
 
 ---
 
-## ✅ Current Progress
+## Current Progress
 
 - ✔ Project architecture created
 - ✔ PostgreSQL database connected
@@ -85,7 +85,7 @@ Finoviq/
 
 ---
 
-## 📅 Roadmap
+##  Roadmap
 
 - [x] Project Setup
 - [x] Database Design
@@ -103,7 +103,7 @@ Finoviq/
 
 ---
 
-## 👩‍💻 Author
+## Author
 
 **Anishka Khati**
 
