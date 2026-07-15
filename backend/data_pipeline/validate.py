@@ -5,31 +5,34 @@ def validate_data(data):
 
     print("\n========== DATA VALIDATION ==========\n")
 
-    # Missing values
     missing = data.isnull().sum()
 
     print("Missing Values:")
     print(missing)
 
     if missing.sum() > 0:
-        print("\n❌ Validation Failed: Missing values found.")
+        print("\nValidation Failed: Missing values found.")
         return False
 
-    # Duplicate rows
+    # -------------------------------
+    # Check Duplicate Rows
+    # -------------------------------
     duplicates = data.duplicated().sum()
 
     print(f"\nDuplicate Rows: {duplicates}")
 
     if duplicates > 0:
-        print("❌ Validation Failed: Duplicate rows found.")
+        print(" Validation Failed: Duplicate rows found.")
         return False
 
-    # Negative prices
+    # -------------------------------
+    # Check Negative Prices
+    # -------------------------------
     price_columns = [
-        "open_price",
-        "high_price",
-        "low_price",
-        "close_price"
+        "open",
+        "high",
+        "low",
+        "close"
     ]
 
     for column in price_columns:
@@ -39,13 +42,18 @@ def validate_data(data):
         print(f"Negative values in {column}: {negative}")
 
         if negative > 0:
-            print(f"❌ Validation Failed: Negative values in {column}.")
+            print(f" Validation Failed: Negative values in {column}.")
             return False
 
-    # Data Types
+    # -------------------------------
+    # Check Data Types
+    # -------------------------------
     print("\nData Types:")
     print(data.dtypes)
 
-    print("\n✅ Validation Passed!")
+    # -------------------------------
+    # Validation Passed
+    # -------------------------------
+    print("\n Validation Passed!")
 
     return True
