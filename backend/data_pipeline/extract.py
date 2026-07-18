@@ -4,9 +4,7 @@ from backend.data_pipeline.transform import transform_data
 from backend.data_pipeline.validate import validate_data
 from backend.data_pipeline.load import load_data
 
-from backend.feature_engineering.preprocessing import preprocess_data
-from backend.feature_engineering.indicators import add_indicators
-from backend.feature_engineering.lag_features import add_lag_features
+from backend.feature_engineering.feature_builder import build_features
 
 from backend.database.db import get_company_id
 
@@ -16,7 +14,7 @@ def download_stock(symbol):
     Download historical stock data from Yahoo Finance.
     """
 
-    print(f"\nDownloading {symbol}...")
+    print(f"\n========== DOWNLOADING {symbol} ==========\n")
 
     data = yf.Ticker(symbol).history(period="1y")
 
@@ -25,7 +23,9 @@ def download_stock(symbol):
 
 if __name__ == "__main__":
 
-    # List of stocks to download
+    print("\n========== FINOVIQ AI ETL PIPELINE ==========\n")
+
+    # Stocks to process
     symbols = [
         "AAPL",
         "MSFT",
@@ -44,33 +44,26 @@ if __name__ == "__main__":
         company_id = get_company_id(symbol)
 
         if company_id is None:
-            print(f" {symbol} not found in companies table.")
+            print(f"{symbol} not found in companies table.")
             continue
 
-        # STEP 2 — Extract
-        data = download_stock(symbol)
+        # STEP 2 — Extract Data
+        raw_data = download_stock(symbol)
 
-        # STEP 3 — Transform
-        transformed = transform_data(data, company_id)
+        # STEP 3 — Transform Data
+        transformed_data = transform_data(raw_data, company_id)
 
-        # STEP 4 — Validate
-        if validate_data(transformed):
+        # STEP 4 — Validate Raw Data
+        if not validate_data(transformed_data):
+            print(f"Validation failed for {symbol}.")
+            continue
 
-            # STEP 5 — Preprocess
-            processed = preprocess_data(transformed)
+        # STEP 5 — Complete Feature Engineering Pipeline
+        processed_data = build_features(transformed_data)
 
-            # STEP 6 — Technical Indicators
-            processed = add_indicators(processed)
+        # STEP 6 — Load into PostgreSQL
+        load_data(processed_data)
 
-            # STEP 7 — Lag Features
-            processed = add_lag_features(processed)
+        print(f"\n{symbol} pipeline completed successfully.")
 
-            # STEP 8 — Load to PostgreSQL
-            load_data(processed)
-
-            print(f" {symbol} pipeline completed successfully.")
-
-        else:
-            print(f" Validation failed for {symbol}. Data not loaded.")
-
-    print("\n ETL Pipeline Finished Successfully!")
+    print("\n========== ETL PIPELINE FINISHED SUCCESSFULLY ==========\n")
