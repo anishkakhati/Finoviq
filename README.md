@@ -1,112 +1,280 @@
-# Finoviq AI
+#  Finoviq AI
 
-An AI-powered intelligent investment platform that combines Machine Learning, Deep Learning, Reinforcement Learning, and Explainable AI to help investors make data-driven investment decisions.
+> **An End-to-End AI-Powered Intelligent Investment Platform**
 
----
+Finoviq AI is an intelligent investment platform that leverages **Machine Learning, Deep Learning, Reinforcement Learning, and Explainable AI (XAI)** to analyze financial markets, predict stock prices, optimize investment portfolios, assess risk, and provide transparent, data-driven investment recommendations.
 
-## Features
-
-- Historical stock data collection from Yahoo Finance
-- ETL (Extract, Transform, Load) pipeline
-- PostgreSQL database
-- Data validation pipeline
-- Modular backend architecture
-- Machine Learning (Coming Soon)
-- Reinforcement Learning (Coming Soon)
-- Explainable AI (Coming Soon)
-- Portfolio Recommendation System (Coming Soon)
+The project is being built as a production-ready AI system with a modular architecture, automated data pipelines, and scalable machine learning workflows.
 
 ---
 
-## Project Structure
+#  Features
 
-```
+##  Data Engineering
+
+- Historical stock data collection using Yahoo Finance API
+- Automated ETL (Extract, Transform, Load) Pipeline
+- PostgreSQL Database Integration
+- Automated Data Validation
+- Data Cleaning & Preprocessing Pipeline
+- Multi-company Data Pipeline
+
+---
+
+## Feature Engineering
+
+### Price-Based Features
+
+- Daily Return
+- Price Range
+- Candle Size
+- Volatility
+
+### Technical Indicators
+
+- SMA (5, 10, 20, 50, 200)
+- EMA (12, 26)
+- RSI (14)
+- MACD
+- Bollinger Bands
+- ATR (Average True Range)
+- OBV (On Balance Volume)
+- VWAP (Volume Weighted Average Price)
+
+### Time-Series Features
+
+- Close Price Lags
+- Volume Lags
+- Open Price Lag
+- High Price Lag
+- Low Price Lag
+
+### Rolling Statistics
+
+- Rolling Mean
+- Rolling Maximum
+- Rolling Minimum
+- Rolling Standard Deviation
+- Rolling Median
+
+---
+
+##  Upcoming Features
+
+- Stock Price Prediction
+- Multi-Step Forecasting
+- Risk Analysis
+- Portfolio Optimization
+- Reinforcement Learning Agent
+- Explainable AI (SHAP & LIME)
+- FastAPI Backend
+- React Dashboard
+- Real-Time Stock Data
+- Docker Deployment
+- Cloud Deployment
+
+---
+
+#  Project Structure
+
+```text
 Finoviq/
 
 ├── backend/
-│   ├── api/
-│   ├── data_pipeline/
-│   ├── database/
-│   ├── models/
-│   ├── routes/
-│   └── services/
+│
+├── api/
+│
+├── data_pipeline/
+│ ├── extract.py
+│ ├── transform.py
+│ ├── validate.py
+│ └── load.py
+│
+├── database/
+│ └── db.py
+│
+├── feature_engineering/
+│ ├── preprocessing.py
+│ ├── indicators.py
+│ ├── lag_features.py
+│ └── scaling.py
+│
+├── models/
+├── routes/
+├── services/
 │
 ├── config/
+│ ├── init.py
+│ └── settings.py
+│
 ├── data/
+│ ├── raw/
+│ └── processed/
+│
 ├── docs/
-├── frontend/
-├── notebooks/
-├── tests/
 ├── utils/
 │
-├── requirements.txt
 ├── README.md
+├── requirements.txt
 └── .gitignore
 ```
 
 ---
 
-##  Tech Stack
+#  Database
 
-### Backend
+Current PostgreSQL Tables
+
+- companies
+- stock_prices
+- processed_stock_data
+- predictions
+- recommendations
+- news
+
+---
+
+#  Machine Learning Dataset
+
+The processed dataset contains
+
+## Raw Features
+
+- Open
+- High
+- Low
+- Close
+- Adj Close
+- Volume
+
+## Engineered Features
+
+- Daily Return
+- Price Range
+- Candle Size
+- Volatility
+
+## Technical Indicators
+
+- SMA
+- EMA
+- RSI
+- MACD
+- Bollinger Bands
+- ATR
+- OBV
+- VWAP
+
+## Time-Series Features
+
+- Close Lag Features
+- Volume Lag Features
+- Open Lag
+- High Lag
+- Low Lag
+
+## Rolling Features
+
+- Rolling Mean
+- Rolling Maximum
+- Rolling Minimum
+- Rolling Standard Deviation
+- Rolling Median
+
+These features will serve as the primary input for the Machine Learning models.
+
+---
+
+#  Tech Stack
+
+## Programming Language
+
 - Python
-- FastAPI (Upcoming)
 
-### Database
+## Database
+
 - PostgreSQL
-- SQLAlchemy
 - psycopg2
+- SQLAlchemy
 
-### Data Engineering
+## Data Engineering
+
 - Pandas
 - NumPy
-- Yahoo Finance API (yfinance)
+- Yahoo Finance (yfinance)
 
-### Machine Learning (Upcoming)
+## Machine Learning (Upcoming)
+
 - Scikit-learn
+- XGBoost
 - TensorFlow
 - PyTorch
-- XGBoost
 
-### Frontend (Upcoming)
+## Backend (Upcoming)
+
+- FastAPI
+
+## Frontend (Upcoming)
+
 - React.js
 - Tailwind CSS
 
+## Visualization (Upcoming)
+
+- Plotly
+- Matplotlib
 
 ---
 
-## Current Progress
 
-- ✔ Project architecture created
-- ✔ PostgreSQL database connected
-- ✔ ETL pipeline implemented
-- ✔ Data validation completed
-- ✔ Historical stock data successfully stored in PostgreSQL
-
----
-
-##  Roadmap
+#  Roadmap
 
 - [x] Project Setup
+- [x] GitHub Repository
+- [x] PostgreSQL Database
 - [x] Database Design
-- [x] PostgreSQL Integration
 - [x] ETL Pipeline
-- [ ] Technical Indicators
-- [ ] Feature Engineering
-- [ ] Machine Learning Models
-- [ ] Deep Learning Models
-- [ ] Reinforcement Learning
-- [ ] Explainable AI
+- [x] Data Validation
+- [x] Data Cleaning
+- [x] Feature Engineering
+- [x] Technical Indicators
+- [x] Lag Features
+- [x] Rolling Statistics
+- [x] Processed Dataset Generation
+- [ ] Machine Learning Dataset Builder
+- [ ] Stock Price Prediction Models
+- [ ] Hyperparameter Optimization
+- [ ] Deep Learning Models (LSTM / GRU / Transformer)
+- [ ] Reinforcement Learning Trading Agent
+- [ ] Portfolio Optimization
+- [ ] Risk Analysis
+- [ ] Explainable AI (SHAP & LIME)
 - [ ] FastAPI Backend
 - [ ] React Dashboard
-- [ ] Deployment
+- [ ] Docker Support
+- [ ] Cloud Deployment
 
 ---
 
-## Author
+# Project Goal
+
+The objective of Finoviq AI is to develop a complete AI-driven investment platform capable of:
+
+- Predicting future stock prices
+- Generating buy/sell recommendations
+- Assessing investment risk
+- Optimizing portfolios
+- Providing explainable investment insights
+- Continuously improving trading strategies using Reinforcement Learning
+
+---
+
+#  Author
 
 **Anishka Khati**
 
-B.Tech CSE (AI & ML)
+B.Tech Computer Science & Engineering (Artificial Intelligence & Machine Learning)
 
-Building **Finoviq AI** as an end-to-end intelligent investment platform.
+Building **Finoviq AI** as an end-to-end intelligent investment platform integrating Data Engineering, Machine Learning, Deep Learning, Reinforcement Learning, and Explainable AI.
+
+---
