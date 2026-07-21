@@ -36,8 +36,6 @@ def transform_data(data, company_id):
     # Add company_id
     data["company_id"] = company_id
 
-    # Create adj_close column
-    data["adj_close"] = data["close"]
 
     # Sort by date
     data = data.sort_values("trade_date")

@@ -8,20 +8,21 @@ def preprocess_data(data):
     # Remove duplicate rows
     data = data.drop_duplicates()
 
-    # Fill missing values
-    data = data.ffill()
-
     # Ensure trade_date is datetime
     data["trade_date"] = pd.to_datetime(data["trade_date"])
 
-    # Sort by date
-    data = data.sort_values("trade_date")
-
-    # Reset index
-    data = data.reset_index(drop=True)
+    # Sort by company and date
+    data = (
+        data
+        .sort_values(["company_id", "trade_date"])
+        .reset_index(drop=True)
+    )
 
     # Daily Return
-    data["daily_return"] = data["close"].pct_change()
+    data["daily_return"] = (
+        data.groupby("company_id")["close"]
+        .pct_change()
+    )
 
     # Price Range
     data["price_range"] = data["high"] - data["low"]
@@ -29,11 +30,16 @@ def preprocess_data(data):
     # Candle Size
     data["candle_size"] = data["close"] - data["open"]
 
-    # Volatility (20-day rolling standard deviation)
-    data["volatility"] = data["daily_return"].rolling(window=20).std()
+    # Volatility
+    data["volatility"] = (
+        data.groupby("company_id")["daily_return"]
+        .rolling(window=20)
+        .std()
+        .reset_index(level=0, drop=True)
+    )
 
     print(data.head(25))
 
-    print("\n Preprocessing Complete!\n")
+    print("\nPreprocessing Complete!\n")
 
     return data

@@ -1,3 +1,4 @@
+import pandas as pd
 import psycopg2
 
 from config.settings import (
@@ -8,6 +9,28 @@ from config.settings import (
     DB_PASSWORD
 )
 
+
+# ==========================================================
+# Helper Functions
+# ==========================================================
+
+def safe_float(value):
+    """Convert value to float or None if NaN."""
+    if pd.isna(value):
+        return None
+    return float(value)
+
+
+def safe_int(value):
+    """Convert value to int or None if NaN."""
+    if pd.isna(value):
+        return None
+    return int(value)
+
+
+# ==========================================================
+# Load Data into PostgreSQL
+# ==========================================================
 
 def load_data(data):
 
@@ -33,7 +56,6 @@ def load_data(data):
         high,
         low,
         close,
-        adj_close,
         volume,
 
         daily_return,
@@ -52,6 +74,7 @@ def load_data(data):
         macd_histogram,
 
         bb_upper,
+        bb_middle,
         bb_lower,
 
         atr_14,
@@ -82,18 +105,32 @@ def load_data(data):
 
     VALUES
     (
-        %s,%s,%s,%s,%s,%s,%s,%s,
+        %s,%s,
+
+        %s,%s,%s,%s,%s,%s,
+
         %s,%s,%s,%s,
+
         %s,%s,%s,
+
         %s,
+
         %s,%s,%s,
-        %s,%s,
+
+        %s,%s,%s,
+
         %s,
+
         %s,
+
         %s,
+
         %s,%s,%s,%s,%s,
+
         %s,%s,
+
         %s,%s,%s,
+
         %s,%s,%s,%s,%s
     )
 
@@ -110,58 +147,70 @@ def load_data(data):
             cursor.execute(
                 insert_query,
                 (
-                    int(row["company_id"]),
+                    # Basic Information
+                    safe_int(row["company_id"]),
                     row["trade_date"].date(),
 
-                    float(row["open"]),
-                    float(row["high"]),
-                    float(row["low"]),
-                    float(row["close"]),
-                    float(row["adj_close"]),
-                    int(row["volume"]),
+                    # OHLCV
+                    safe_float(row["open"]),
+                    safe_float(row["high"]),
+                    safe_float(row["low"]),
+                    safe_float(row["close"]),
+                    safe_int(row["volume"]),
 
-                    float(row["daily_return"]),
-                    float(row["price_range"]),
-                    float(row["candle_size"]),
-                    float(row["volatility"]),
+                    # Basic Features
+                    safe_float(row["daily_return"]),
+                    safe_float(row["price_range"]),
+                    safe_float(row["candle_size"]),
+                    safe_float(row["volatility"]),
 
-                    float(row["SMA_20"]),
-                    float(row["EMA_12"]),
-                    float(row["EMA_26"]),
+                    # Moving Averages
+                    safe_float(row["SMA_20"]),
+                    safe_float(row["EMA_12"]),
+                    safe_float(row["EMA_26"]),
 
-                    float(row["RSI_14"]),
+                    # RSI
+                    safe_float(row["RSI_14"]),
 
-                    float(row["MACD"]),
-                    float(row["MACD_Signal"]),
-                    float(row["MACD_Histogram"]),
+                    # MACD
+                    safe_float(row["MACD"]),
+                    safe_float(row["MACD_Signal"]),
+                    safe_float(row["MACD_Histogram"]),
 
-                    float(row["BB_Upper"]),
-                    float(row["BB_Lower"]),
+                    # Bollinger Bands
+                    safe_float(row["BB_Upper"]),
+                    safe_float(row["BB_Middle"]),
+                    safe_float(row["BB_Lower"]),
 
-                    float(row["ATR_14"]),
+                    # ATR
+                    safe_float(row["ATR_14"]),
 
-                    int(row["OBV"]),
+                    # OBV
+                    safe_int(row["OBV"]),
 
-                    float(row["VWAP"]),
+                    # VWAP
+                    safe_float(row["VWAP"]),
 
-                    float(row["close_lag_1"]) if not psycopg2.extensions.AsIs(str(row["close_lag_1"])) else None,
-                    float(row["close_lag_2"]) if not psycopg2.extensions.AsIs(str(row["close_lag_2"])) else None,
-                    float(row["close_lag_3"]) if not psycopg2.extensions.AsIs(str(row["close_lag_3"])) else None,
-                    float(row["close_lag_5"]) if not psycopg2.extensions.AsIs(str(row["close_lag_5"])) else None,
-                    float(row["close_lag_10"]) if not psycopg2.extensions.AsIs(str(row["close_lag_10"])) else None,
+                    # Lag Features
+                    safe_float(row["close_lag_1"]),
+                    safe_float(row["close_lag_2"]),
+                    safe_float(row["close_lag_3"]),
+                    safe_float(row["close_lag_5"]),
+                    safe_float(row["close_lag_10"]),
 
-                    int(row["volume_lag_1"]) if row["volume_lag_1"] == row["volume_lag_1"] else None,
-                    int(row["volume_lag_5"]) if row["volume_lag_5"] == row["volume_lag_5"] else None,
+                    safe_int(row["volume_lag_1"]),
+                    safe_int(row["volume_lag_5"]),
 
-                    float(row["open_lag_1"]) if row["open_lag_1"] == row["open_lag_1"] else None,
-                    float(row["high_lag_1"]) if row["high_lag_1"] == row["high_lag_1"] else None,
-                    float(row["low_lag_1"]) if row["low_lag_1"] == row["low_lag_1"] else None,
+                    safe_float(row["open_lag_1"]),
+                    safe_float(row["high_lag_1"]),
+                    safe_float(row["low_lag_1"]),
 
-                    float(row["rolling_mean_20"]) if row["rolling_mean_20"] == row["rolling_mean_20"] else None,
-                    float(row["rolling_std_20"]) if row["rolling_std_20"] == row["rolling_std_20"] else None,
-                    float(row["rolling_max_20"]) if row["rolling_max_20"] == row["rolling_max_20"] else None,
-                    float(row["rolling_min_20"]) if row["rolling_min_20"] == row["rolling_min_20"] else None,
-                    float(row["rolling_median_20"]) if row["rolling_median_20"] == row["rolling_median_20"] else None
+                    # Rolling Features
+                    safe_float(row["rolling_mean_20"]),
+                    safe_float(row["rolling_std_20"]),
+                    safe_float(row["rolling_max_20"]),
+                    safe_float(row["rolling_min_20"]),
+                    safe_float(row["rolling_median_20"])
                 )
             )
 
@@ -186,4 +235,4 @@ def load_data(data):
     connection.close()
 
     print(f"\nSuccessfully inserted {inserted_rows} rows.")
-    print(" Processed Data Loaded Successfully!")
+    print("Processed Data Loaded Successfully!")

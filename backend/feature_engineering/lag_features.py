@@ -6,48 +6,78 @@ def add_lag_features(data):
     print("\n========== ADDING LAG & ROLLING FEATURES ==========\n")
 
     # =====================================================
+    # SORT DATA
+    # =====================================================
+
+    data = (
+        data
+        .sort_values(["company_id", "trade_date"])
+        .reset_index(drop=True)
+    )
+
+    # =====================================================
     # CLOSE PRICE LAGS
     # =====================================================
 
-    data["close_lag_1"] = data["close"].shift(1)
-    data["close_lag_2"] = data["close"].shift(2)
-    data["close_lag_3"] = data["close"].shift(3)
-    data["close_lag_5"] = data["close"].shift(5)
-    data["close_lag_10"] = data["close"].shift(10)
+    data["close_lag_1"] = data.groupby("company_id")["close"].shift(1)
+    data["close_lag_2"] = data.groupby("company_id")["close"].shift(2)
+    data["close_lag_3"] = data.groupby("company_id")["close"].shift(3)
+    data["close_lag_5"] = data.groupby("company_id")["close"].shift(5)
+    data["close_lag_10"] = data.groupby("company_id")["close"].shift(10)
 
     # =====================================================
     # VOLUME LAGS
     # =====================================================
 
-    data["volume_lag_1"] = data["volume"].shift(1)
-    data["volume_lag_5"] = data["volume"].shift(5)
+    data["volume_lag_1"] = data.groupby("company_id")["volume"].shift(1)
+    data["volume_lag_5"] = data.groupby("company_id")["volume"].shift(5)
 
     # =====================================================
     # OPEN, HIGH & LOW LAGS
     # =====================================================
 
-    data["open_lag_1"] = data["open"].shift(1)
-    data["high_lag_1"] = data["high"].shift(1)
-    data["low_lag_1"] = data["low"].shift(1)
+    data["open_lag_1"] = data.groupby("company_id")["open"].shift(1)
+    data["high_lag_1"] = data.groupby("company_id")["high"].shift(1)
+    data["low_lag_1"] = data.groupby("company_id")["low"].shift(1)
 
     # =====================================================
     # ROLLING FEATURES (20 DAYS)
     # =====================================================
 
-    # Rolling Mean
-    data["rolling_mean_20"] = data["close"].rolling(window=20).mean()
+    data["rolling_mean_20"] = (
+        data.groupby("company_id")["close"]
+        .rolling(window=20)
+        .mean()
+        .reset_index(level=0, drop=True)
+    )
 
-    # Rolling Maximum
-    data["rolling_max_20"] = data["close"].rolling(window=20).max()
+    data["rolling_max_20"] = (
+        data.groupby("company_id")["close"]
+        .rolling(window=20)
+        .max()
+        .reset_index(level=0, drop=True)
+    )
 
-    # Rolling Minimum
-    data["rolling_min_20"] = data["close"].rolling(window=20).min()
+    data["rolling_min_20"] = (
+        data.groupby("company_id")["close"]
+        .rolling(window=20)
+        .min()
+        .reset_index(level=0, drop=True)
+    )
 
-    # Rolling Standard Deviation
-    data["rolling_std_20"] = data["close"].rolling(window=20).std()
+    data["rolling_std_20"] = (
+        data.groupby("company_id")["close"]
+        .rolling(window=20)
+        .std()
+        .reset_index(level=0, drop=True)
+    )
 
-    # Rolling Median
-    data["rolling_median_20"] = data["close"].rolling(window=20).median()
+    data["rolling_median_20"] = (
+        data.groupby("company_id")["close"]
+        .rolling(window=20)
+        .median()
+        .reset_index(level=0, drop=True)
+    )
 
     # =====================================================
     # DISPLAY RESULTS
@@ -56,6 +86,7 @@ def add_lag_features(data):
     print(
         data[
             [
+                "company_id",
                 "trade_date",
                 "close",
                 "close_lag_1",

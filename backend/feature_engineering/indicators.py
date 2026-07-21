@@ -5,88 +5,157 @@ def add_indicators(data):
 
     print("\n========== ADDING TECHNICAL INDICATORS ==========\n")
 
-    # -----------------------------
-    # Simple Moving Averages (SMA)
-    # -----------------------------
-    data["SMA_5"] = data["close"].rolling(window=5).mean()
-    data["SMA_10"] = data["close"].rolling(window=10).mean()
-    data["SMA_20"] = data["close"].rolling(window=20).mean()
-    data["SMA_50"] = data["close"].rolling(window=50).mean()
-    data["SMA_200"] = data["close"].rolling(window=200).mean()
+    # =====================================================
+    # Sort by company and date
+    # =====================================================
 
-    # -----------------------------
-    # Exponential Moving Averages
-    # -----------------------------
+    data = (
+        data
+        .sort_values(["company_id", "trade_date"])
+        .reset_index(drop=True)
+    )
 
-    data["EMA_12"] = data["close"].ewm(span=12, adjust=False).mean()
-    data["EMA_26"] = data["close"].ewm(span=26, adjust=False).mean()
+    # =====================================================
+    # SIMPLE MOVING AVERAGES
+    # =====================================================
 
-    # -----------------------------
+    for window in [5, 10, 20, 50, 200]:
+
+        data[f"SMA_{window}"] = (
+            data.groupby("company_id")["close"]
+            .rolling(window)
+            .mean()
+            .reset_index(level=0, drop=True)
+        )
+
+    # =====================================================
+    # EXPONENTIAL MOVING AVERAGES
+    # =====================================================
+
+    data["EMA_12"] = (
+        data.groupby("company_id")["close"]
+        .transform(lambda x: x.ewm(span=12, adjust=False).mean())
+    )
+
+    data["EMA_26"] = (
+        data.groupby("company_id")["close"]
+        .transform(lambda x: x.ewm(span=26, adjust=False).mean())
+    )
+
+    # =====================================================
     # RSI (14)
-    # -----------------------------
+    # =====================================================
 
-    delta = data["close"].diff()
+    delta = data.groupby("company_id")["close"].diff()
+
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
-    avg_gain = gain.rolling(window=14).mean()
-    avg_loss = loss.rolling(window=14).mean()
+
+    avg_gain = (
+        gain.groupby(data["company_id"])
+        .rolling(14)
+        .mean()
+        .reset_index(level=0, drop=True)
+    )
+
+    avg_loss = (
+        loss.groupby(data["company_id"])
+        .rolling(14)
+        .mean()
+        .reset_index(level=0, drop=True)
+    )
+
     rs = avg_gain / avg_loss
+
     data["RSI_14"] = 100 - (100 / (1 + rs))
 
-    # -----------------------------
+    # =====================================================
     # MACD
-    # -----------------------------
+    # =====================================================
 
     data["MACD"] = data["EMA_12"] - data["EMA_26"]
-    data["MACD_Signal"] = (data["MACD"].ewm(span=9, adjust=False).mean())
-    data["MACD_Histogram"] = (data["MACD"] - data["MACD_Signal"])
 
-    # -----------------------------
-    # Bollinger Bands
-    # -----------------------------
+    data["MACD_Signal"] = (
+        data.groupby("company_id")["MACD"]
+        .transform(lambda x: x.ewm(span=9, adjust=False).mean())
+    )
 
-    rolling_std = data["close"].rolling(window=20).std()
+    data["MACD_Histogram"] = (
+        data["MACD"] - data["MACD_Signal"]
+    )
+
+    # =====================================================
+    # BOLLINGER BANDS
+    # =====================================================
+
+    rolling_std = (
+        data.groupby("company_id")["close"]
+        .rolling(20)
+        .std()
+        .reset_index(level=0, drop=True)
+    )
+
     data["BB_Upper"] = data["SMA_20"] + (2 * rolling_std)
     data["BB_Middle"] = data["SMA_20"]
     data["BB_Lower"] = data["SMA_20"] - (2 * rolling_std)
 
-    # -----------------------------
-    # ATR (Average True Range)
-    # -----------------------------
+    # =====================================================
+    # ATR (14)
+    # =====================================================
 
-    # Previous day's closing price
-    previous_close = data["close"].shift(1)
+    previous_close = (
+        data.groupby("company_id")["close"]
+        .shift(1)
+    )
+
     high_low = data["high"] - data["low"]
     high_close = (data["high"] - previous_close).abs()
     low_close = (data["low"] - previous_close).abs()
+
     true_range = pd.concat(
         [high_low, high_close, low_close],
         axis=1
     ).max(axis=1)
-    data["ATR_14"] = true_range.rolling(window=14).mean()
 
-    # -----------------------------
-    # OBV (On Balance Volume)
-    # -----------------------------
+    data["ATR_14"] = (
+        true_range
+        .groupby(data["company_id"])
+        .rolling(14)
+        .mean()
+        .reset_index(level=0, drop=True)
+    )
 
-    obv = [0]
+    # =====================================================
+    # OBV
+    # =====================================================
 
-    for i in range(1, len(data)):
+    data["OBV"] = 0
 
-        if data["close"].iloc[i] > data["close"].iloc[i - 1]:
-            obv.append(obv[-1] + data["volume"].iloc[i])
+    for company in data["company_id"].unique():
 
-        elif data["close"].iloc[i] < data["close"].iloc[i - 1]:
-            obv.append(obv[-1] - data["volume"].iloc[i])
+        company_index = data[data["company_id"] == company].index
 
-        else:
-            obv.append(obv[-1])
+        obv = [0]
 
-    data["OBV"] = obv
+        for i in range(1, len(company_index)):
 
-    # -----------------------------
-    # VWAP (Volume Weighted Average Price)
-    # -----------------------------
+            current = company_index[i]
+            previous = company_index[i - 1]
+
+            if data.loc[current, "close"] > data.loc[previous, "close"]:
+                obv.append(obv[-1] + data.loc[current, "volume"])
+
+            elif data.loc[current, "close"] < data.loc[previous, "close"]:
+                obv.append(obv[-1] - data.loc[current, "volume"])
+
+            else:
+                obv.append(obv[-1])
+
+        data.loc[company_index, "OBV"] = obv
+
+    # =====================================================
+    # VWAP
+    # =====================================================
 
     typical_price = (
         data["high"] +
@@ -94,19 +163,43 @@ def add_indicators(data):
         data["close"]
     ) / 3
 
+    tpv = typical_price * data["volume"]
+
     data["VWAP"] = (
-        (typical_price * data["volume"]).cumsum()
-        / data["volume"].cumsum()
+        tpv.groupby(data["company_id"]).cumsum()
+        /
+        data["volume"].groupby(data["company_id"]).cumsum()
     )
 
+    # =====================================================
+    # DISPLAY RESULTS
+    # =====================================================
+
     print(
-    data[
-        [
-            "trade_date",
-            "close",
-            "volume",
-            "VWAP"
-        ]
-    ].head(30)
+        data[
+            [
+                "company_id",
+                "trade_date",
+                "close",
+                "VWAP"
+            ]
+        ].head(30)
     )
+
+    print("\n========== BOLLINGER BAND CHECK ==========\n")
+
+    print(
+        data[
+            [
+                "company_id",
+                "SMA_20",
+                "BB_Upper",
+                "BB_Middle",
+                "BB_Lower"
+            ]
+        ].tail(20)
+    )
+
+    print("\nTechnical Indicators Created Successfully!\n")
+
     return data
