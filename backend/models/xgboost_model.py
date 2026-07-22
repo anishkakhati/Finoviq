@@ -1,19 +1,20 @@
-from backend.database.save_results import save_model_results
-
 import os
 import time
 import joblib
+import numpy as np
 
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.multioutput import MultiOutputRegressor
 
 from backend.models.preprocessing import load_dataset
 from backend.models.evaluate import evaluate_model
+from backend.database.save_results import save_model_results
 
 
 def train_xgboost():
 
-    print("\n========== XGBOOST TRAINING ==========\n")
+    print("\n========== TRAINING MULTI-OUTPUT XGBOOST ==========\n")
 
     # ==========================================================
     # LOAD DATASET
@@ -22,7 +23,7 @@ def train_xgboost():
     X, y, data = load_dataset(model_type="tree")
 
     # ==========================================================
-    # TRAIN TEST SPLIT (TIME SERIES)
+    # TRAIN TEST SPLIT
     # ==========================================================
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -36,26 +37,30 @@ def train_xgboost():
     print(f"Testing Samples  : {len(X_test)}")
 
     # ==========================================================
-    # CREATE XGBOOST MODEL
+    # CREATE MULTI-OUTPUT XGBOOST
     # ==========================================================
 
-    model = XGBRegressor(
+    model = MultiOutputRegressor(
 
-        objective="reg:squarederror",
+        XGBRegressor(
 
-        n_estimators=500,
+            objective="reg:squarederror",
 
-        learning_rate=0.05,
+            n_estimators=500,
 
-        max_depth=6,
+            learning_rate=0.05,
 
-        subsample=0.8,
+            max_depth=6,
 
-        colsample_bytree=0.8,
+            subsample=0.8,
 
-        random_state=42,
+            colsample_bytree=0.8,
 
-        n_jobs=-1
+            random_state=42,
+
+            n_jobs=-1
+
+        )
 
     )
 
@@ -63,7 +68,7 @@ def train_xgboost():
     # TRAIN MODEL
     # ==========================================================
 
-    print("\nTraining XGBoost...\n")
+    print("\nTraining Multi-Output XGBoost...\n")
 
     start = time.time()
 
@@ -86,14 +91,17 @@ def train_xgboost():
 
     print("\n========== FIRST 10 PREDICTIONS ==========\n")
 
-    for actual, predicted in zip(
-        y_test.iloc[:10],
-        predictions[:10]
-    ):
+    for i in range(10):
 
-        print(
-            f"Actual : {actual:.2f}     Predicted : {predicted:.2f}"
-        )
+        print(f"\nSample {i+1}")
+
+        print("Actual:")
+
+        print(y_test.iloc[i].values)
+
+        print("Predicted:")
+
+        print(predictions[i])
 
     # ==========================================================
     # EVALUATE MODEL
@@ -105,17 +113,17 @@ def train_xgboost():
 
         predictions=predictions,
 
-        model_name="XGBoost"
+        model_name="Multi-Output XGBoost"
 
     )
 
     # ==========================================================
-    # SAVE RESULTS TO POSTGRESQL
+    # SAVE RESULTS
     # ==========================================================
 
     save_model_results(
 
-        model_name="XGBoost",
+        model_name="Multi-Output XGBoost",
 
         mae=metrics["mae"],
 
@@ -135,12 +143,28 @@ def train_xgboost():
 
     print("\n========== FEATURE IMPORTANCE ==========\n")
 
-    importance = model.feature_importances_
+    feature_importance = np.mean(
+
+        [
+
+            estimator.feature_importances_
+
+            for estimator in model.estimators_
+
+        ],
+
+        axis=0
+
+    )
 
     feature_importance = sorted(
-        zip(X.columns, importance),
+
+        zip(X.columns, feature_importance),
+
         key=lambda x: x[1],
+
         reverse=True
+
     )
 
     for feature, score in feature_importance:
@@ -152,23 +176,47 @@ def train_xgboost():
     # ==========================================================
 
     os.makedirs(
+
         "backend/saved_models",
+
         exist_ok=True
+
     )
 
     joblib.dump(
+
         model,
-        "backend/saved_models/xgboost.pkl"
+
+        "backend/saved_models/multi_xgboost.pkl"
+
     )
 
-    print("\nXGBoost Model Saved Successfully!")
+    print("\nMulti-Output XGBoost Model Saved Successfully!")
+
+    # ==========================================================
+    # PREDICTION STATISTICS
+    # ==========================================================
+
+    print("\n========== PREDICTION STATISTICS ==========\n")
+
+    print("Prediction Shape :", predictions.shape)
+
+    print("NaN Values       :", np.isnan(predictions).any())
+
+    print("Infinite Values  :", np.isinf(predictions).any())
 
     return (
+
         model,
+
         predictions,
+
         y_test,
+
         metrics,
+
         training_time
+
     )
 
 

@@ -1,9 +1,11 @@
 import os
 import time
 import joblib
+import numpy as np
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.multioutput import MultiOutputRegressor
 
 from backend.models.preprocessing import load_dataset
 from backend.models.evaluate import evaluate_model
@@ -12,7 +14,7 @@ from backend.database.save_results import save_model_results
 
 def train_random_forest():
 
-    print("\n========== RANDOM FOREST TRAINING ==========\n")
+    print("\n========== TRAINING MULTI-OUTPUT RANDOM FOREST ==========\n")
 
     # ==========================================================
     # LOAD DATASET
@@ -35,17 +37,21 @@ def train_random_forest():
     print(f"Testing Samples  : {len(X_test)}")
 
     # ==========================================================
-    # CREATE RANDOM FOREST MODEL
+    # CREATE MULTI-OUTPUT RANDOM FOREST
     # ==========================================================
 
-    model = RandomForestRegressor(
+    model = MultiOutputRegressor(
 
-        n_estimators=300,
-        max_depth=15,
-        min_samples_split=5,
-        min_samples_leaf=2,
-        random_state=42,
-        n_jobs=-1
+        RandomForestRegressor(
+
+            n_estimators=300,
+            max_depth=15,
+            min_samples_split=5,
+            min_samples_leaf=2,
+            random_state=42,
+            n_jobs=-1
+
+        )
 
     )
 
@@ -53,7 +59,7 @@ def train_random_forest():
     # TRAIN MODEL
     # ==========================================================
 
-    print("\nTraining Random Forest...\n")
+    print("\nTraining Multi-Output Random Forest...\n")
 
     start = time.time()
 
@@ -73,14 +79,17 @@ def train_random_forest():
 
     print("\n========== FIRST 10 PREDICTIONS ==========\n")
 
-    for actual, predicted in zip(
-        y_test.iloc[:10],
-        predictions[:10]
-    ):
+    for i in range(10):
 
-        print(
-            f"Actual : {actual:.2f}     Predicted : {predicted:.2f}"
-        )
+        print(f"\nSample {i+1}")
+
+        print("Actual:")
+
+        print(y_test.iloc[i].values)
+
+        print("Predicted:")
+
+        print(predictions[i])
 
     # ==========================================================
     # EVALUATION
@@ -92,7 +101,7 @@ def train_random_forest():
 
         predictions=predictions,
 
-        model_name="Random Forest"
+        model_name="Multi-Output Random Forest"
 
     )
 
@@ -102,7 +111,7 @@ def train_random_forest():
 
     save_model_results(
 
-        model_name="Random Forest",
+        model_name="Multi-Output Random Forest",
 
         mae=metrics["mae"],
 
@@ -122,11 +131,23 @@ def train_random_forest():
 
     print("\n========== FEATURE IMPORTANCE ==========\n")
 
-    importance = model.feature_importances_
+    feature_importance = np.mean(
+
+        [
+
+            estimator.feature_importances_
+
+            for estimator in model.estimators_
+
+        ],
+
+        axis=0
+
+    )
 
     feature_importance = sorted(
 
-        zip(X.columns, importance),
+        zip(X.columns, feature_importance),
 
         key=lambda x: x[1],
 
@@ -154,11 +175,23 @@ def train_random_forest():
 
         model,
 
-        "backend/saved_models/random_forest.pkl"
+        "backend/saved_models/multi_random_forest.pkl"
 
     )
 
-    print("\nRandom Forest Model Saved Successfully!")
+    print("\nMulti-Output Random Forest Model Saved Successfully!")
+
+    # ==========================================================
+    # PREDICTION STATISTICS
+    # ==========================================================
+
+    print("\n========== PREDICTION STATISTICS ==========\n")
+
+    print("Prediction Shape :", predictions.shape)
+
+    print("NaN Values       :", np.isnan(predictions).any())
+
+    print("Infinite Values  :", np.isinf(predictions).any())
 
     return (
 

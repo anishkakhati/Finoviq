@@ -9,19 +9,53 @@ from backend.models.xgboost_model import train_xgboost
 def compare_models():
 
     print("\n")
-    print("=" * 60)
-    print("          FINOVIQ AI MODEL COMPARISON")
-    print("=" * 60)
+    print("=" * 80)
+    print("               FINOVIQ AI MODEL COMPARISON")
+    print("=" * 80)
 
-    # ==========================================
-    # Train All Models
-    # ==========================================
+    # ==========================================================
+    # TRAIN ALL MODELS
+    # ==========================================================
 
-    _, _, _, _, _, _, _, linear_metrics = train_model()
+    print("\nTraining Multi-Output Linear Regression...\n")
 
-    _, _, _, rf_metrics, _ = train_random_forest()
+    (
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        linear_metrics
 
-    _, _, _, xgb_metrics, _ = train_xgboost()
+    ) = train_model()
+
+    print("\nTraining Multi-Output Random Forest...\n")
+
+    (
+        _,
+        _,
+        _,
+        rf_metrics,
+        _
+
+    ) = train_random_forest()
+
+    print("\nTraining Multi-Output XGBoost...\n")
+
+    (
+        _,
+        _,
+        _,
+        xgb_metrics,
+        _
+
+    ) = train_xgboost()
+
+    # ==========================================================
+    # STORE RESULTS
+    # ==========================================================
 
     models = [
 
@@ -33,9 +67,9 @@ def compare_models():
 
     ]
 
-    # ==========================================
-    # Sort Models
-    # ==========================================
+    # ==========================================================
+    # SORT BY R²
+    # ==========================================================
 
     models = sorted(
 
@@ -47,56 +81,94 @@ def compare_models():
 
     )
 
+    # ==========================================================
+    # DISPLAY RESULTS
+    # ==========================================================
+
     print("\n")
-    print("=" * 75)
+    print("=" * 95)
 
     print(
-        f'{"MODEL":<22}'
+
+        f'{"Rank":<6}'
+        f'{"Model":<35}'
         f'{"MAE":>10}'
-        f'{"RMSE":>10}'
-        f'{"R²":>10}'
+        f'{"RMSE":>12}'
+        f'{"R²":>12}'
         f'{"MAPE":>12}'
+
     )
 
-    print("=" * 75)
+    print("=" * 95)
 
-    for model in models:
+    for rank, model in enumerate(models, start=1):
 
         print(
 
-            f'{model["model"]:<22}'
+            f'{rank:<6}'
+            f'{model["model"]:<35}'
             f'{model["mae"]:>10.4f}'
-            f'{model["rmse"]:>10.4f}'
-            f'{model["r2"]:>10.4f}'
+            f'{model["rmse"]:>12.4f}'
+            f'{model["r2"]:>12.4f}'
             f'{model["mape"]:>11.2f}%'
 
         )
 
-    print("=" * 75)
+    print("=" * 95)
+
+    # ==========================================================
+    # BEST MODEL
+    # ==========================================================
 
     best_model = models[0]["model"]
 
-    print(f"\n🏆 BEST MODEL : {best_model}")
+    print("\n🏆 BEST MODEL")
 
-    # ==========================================
-    # Save Best Model
-    # ==========================================
+    print("-" * 40)
 
-    if best_model == "Linear Regression":
+    print(best_model)
+
+    # ==========================================================
+    # CREATE DIRECTORY
+    # ==========================================================
+
+    os.makedirs(
+
+        "backend/saved_models",
+
+        exist_ok=True
+
+    )
+
+    # ==========================================================
+    # COPY BEST MODEL
+    # ==========================================================
+
+    if best_model == "Multi-Output Linear Regression":
 
         shutil.copy(
 
-            "backend/saved_models/linear_regression.pkl",
+            "backend/saved_models/multi_linear_regression.pkl",
 
             "backend/saved_models/best_model.pkl"
 
         )
 
-    elif best_model == "Random Forest":
+    elif best_model == "Multi-Output Random Forest":
 
         shutil.copy(
 
-            "backend/saved_models/random_forest.pkl",
+            "backend/saved_models/multi_random_forest.pkl",
+
+            "backend/saved_models/best_model.pkl"
+
+        )
+
+    elif best_model == "Multi-Output XGBoost":
+
+        shutil.copy(
+
+            "backend/saved_models/multi_xgboost.pkl",
 
             "backend/saved_models/best_model.pkl"
 
@@ -104,17 +176,24 @@ def compare_models():
 
     else:
 
-        shutil.copy(
+        raise ValueError(
 
-            "backend/saved_models/xgboost.pkl",
-
-            "backend/saved_models/best_model.pkl"
+            f"Unknown model: {best_model}"
 
         )
 
-    print("\nBest model saved as")
+    print("\nBest model saved successfully!")
+
+    print("Location:")
 
     print("backend/saved_models/best_model.pkl")
+
+    print("\n")
+    print("=" * 80)
+    print("          MODEL COMPARISON COMPLETED SUCCESSFULLY")
+    print("=" * 80)
+
+    return best_model
 
 
 if __name__ == "__main__":

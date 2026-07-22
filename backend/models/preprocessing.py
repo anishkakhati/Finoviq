@@ -10,11 +10,13 @@ from config.settings import (
     DB_PASSWORD
 )
 
+from backend.models.target_generator import create_targets
+
 
 def load_dataset(model_type="linear"):
     """
     Load processed stock data from PostgreSQL
-    and prepare it for Machine Learning.
+    and prepare it for Multi-Output Machine Learning.
 
     model_type:
         "linear" -> Selected features for Linear Regression
@@ -59,21 +61,24 @@ def load_dataset(model_type="linear"):
     print(data.head())
 
     # ==========================================================
-    # STEP 1 : CREATE TARGET VARIABLE
+    # STEP 1 : CREATE MULTI-OUTPUT TARGETS
     # ==========================================================
 
-    print("\n========== CREATING TARGET VARIABLE ==========\n")
+    print("\n========== CREATING MULTI-OUTPUT TARGETS ==========\n")
 
-    data["target_close"] = (
-        data.groupby("company_id")["close"]
-        .shift(-1)
-    )
+    data = create_targets(data)
 
     print(
         data[
             [
                 "company_id",
                 "trade_date",
+                "open",
+                "target_open",
+                "high",
+                "target_high",
+                "low",
+                "target_low",
                 "close",
                 "target_close"
             ]
@@ -94,7 +99,14 @@ def load_dataset(model_type="linear"):
         ]
     )
 
-    data = data.dropna(subset=["target_close"])
+    data = data.dropna(
+        subset=[
+            "target_open",
+            "target_high",
+            "target_low",
+            "target_close"
+        ]
+    )
 
     data = data.dropna()
 
@@ -104,8 +116,9 @@ def load_dataset(model_type="linear"):
     print("\nDataset Shape After Cleaning:")
     print(data.shape)
 
-    # Remove one redundant feature for all models
-    data = data.drop(columns=["rolling_mean_20"])
+    # Remove one redundant feature
+    if "rolling_mean_20" in data.columns:
+        data = data.drop(columns=["rolling_mean_20"])
 
     # ==========================================================
     # FEATURE SELECTION
@@ -161,7 +174,14 @@ def load_dataset(model_type="linear"):
 
         print("\n========== USING ALL FEATURES FOR TREE MODELS ==========\n")
 
-        X = data.drop(columns=["target_close"])
+        X = data.drop(
+            columns=[
+                "target_open",
+                "target_high",
+                "target_low",
+                "target_close"
+            ]
+        )
 
     else:
 
@@ -170,16 +190,23 @@ def load_dataset(model_type="linear"):
         )
 
     # ==========================================================
-    # TARGET
+    # MULTI-OUTPUT TARGET
     # ==========================================================
 
-    y = data["target_close"]
+    y = data[
+        [
+            "target_open",
+            "target_high",
+            "target_low",
+            "target_close"
+        ]
+    ]
 
-    print("Features Shape:", X.shape)
+    print("\nFeatures Shape:", X.shape)
     print("Target Shape:", y.shape)
 
     print("\nFeature Columns:")
-    print(X.columns)
+    print(list(X.columns))
 
     # ==========================================================
     # SAVE FEATURE ORDER
@@ -192,7 +219,7 @@ def load_dataset(model_type="linear"):
 
     print("\nFeature columns saved successfully!")
 
-    print("\nFirst 5 Target Values:")
+    print("\nFirst 5 Multi-Output Targets:")
     print(y.head())
 
     return X, y, data

@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.multioutput import MultiOutputRegressor
 
 from backend.models.preprocessing import load_dataset
 from backend.models.evaluate import evaluate_model
@@ -14,7 +15,7 @@ from backend.database.save_results import save_model_results
 
 def train_model():
 
-    print("\n========== TRAINING MODEL ==========\n")
+    print("\n========== TRAINING MULTI-OUTPUT LINEAR REGRESSION ==========\n")
 
     # ==========================================================
     # LOAD DATASET
@@ -53,9 +54,11 @@ def train_model():
     # TRAIN MODEL
     # ==========================================================
 
-    print("\n========== TRAINING LINEAR REGRESSION ==========\n")
+    print("\n========== TRAINING MULTI-OUTPUT LINEAR REGRESSION ==========\n")
 
-    model = LinearRegression()
+    model = MultiOutputRegressor(
+        LinearRegression()
+    )
 
     start = time.time()
 
@@ -67,28 +70,44 @@ def train_model():
     # CHECK FIRST TRAINING SAMPLE
     # ==========================================================
 
-    print("\n========== FIRST TRAINING SAMPLE AFTER SCALING ==========\n")
+    print("\n========== FIRST TRAINING SAMPLE ==========\n")
 
-    print(X_train[0])
+    prediction = model.predict([X_train[0]])[0]
 
-    train_prediction = model.predict([X_train[0]])
+    print("Prediction:")
+    print(prediction)
 
-    print("\nPrediction on first training sample:")
-    print(train_prediction)
-
-    print("\nActual Target:")
-    print(y_train.iloc[0])
+    print("\nActual:")
+    print(y_train.iloc[0].values)
 
     # ==========================================================
     # MODEL COEFFICIENTS
     # ==========================================================
 
+    target_names = [
+        "Open",
+        "High",
+        "Low",
+        "Close"
+    ]
+
     print("\n========== MODEL COEFFICIENTS ==========\n")
 
-    for feature, coef in zip(X.columns, model.coef_):
-        print(f"{feature:<25} {coef:>15.4f}")
+    for target_name, estimator in zip(
+        target_names,
+        model.estimators_
+    ):
 
-    print(f"\nIntercept : {model.intercept_:.4f}")
+        print(f"\n------ {target_name} ------")
+
+        for feature, coef in zip(
+            X.columns,
+            estimator.coef_
+        ):
+
+            print(f"{feature:<25} {coef:>12.4f}")
+
+        print(f"Intercept : {estimator.intercept_:.4f}")
 
     # ==========================================================
     # SAVE MODEL
@@ -101,7 +120,7 @@ def train_model():
 
     joblib.dump(
         model,
-        "backend/saved_models/linear_regression.pkl"
+        "backend/saved_models/multi_linear_regression.pkl"
     )
 
     joblib.dump(
@@ -114,7 +133,7 @@ def train_model():
         "backend/saved_models/feature_columns.pkl"
     )
 
-    print("\nModel Saved Successfully!")
+    print("\nMulti-Output Model Saved Successfully!")
 
     # ==========================================================
     # TEST PREDICTIONS
@@ -124,11 +143,15 @@ def train_model():
 
     print("\n========== FIRST 10 PREDICTIONS ==========\n")
 
-    for actual, predicted in zip(
-        y_test.iloc[:10],
-        predictions[:10]
-    ):
-        print(f"Actual : {actual:.2f}     Predicted : {predicted:.2f}")
+    for i in range(10):
+
+        print(f"\nSample {i+1}")
+
+        print("Actual:")
+        print(y_test.iloc[i].values)
+
+        print("Predicted:")
+        print(predictions[i])
 
     # ==========================================================
     # EVALUATION
@@ -137,15 +160,15 @@ def train_model():
     metrics = evaluate_model(
         y_true=y_test,
         predictions=predictions,
-        model_name="Linear Regression"
+        model_name="Multi-Output Linear Regression"
     )
 
     # ==========================================================
-    # SAVE RESULTS TO POSTGRESQL
+    # SAVE RESULTS
     # ==========================================================
 
     save_model_results(
-        model_name="Linear Regression",
+        model_name="Multi-Output Linear Regression",
         mae=metrics["mae"],
         rmse=metrics["rmse"],
         r2=metrics["r2"],
@@ -159,8 +182,9 @@ def train_model():
 
     print("\n========== PREDICTION STATISTICS ==========\n")
 
-    print("NaN Values      :", np.isnan(predictions).any())
-    print("Infinite Values :", np.isinf(predictions).any())
+    print("Prediction Shape :", predictions.shape)
+    print("NaN Values       :", np.isnan(predictions).any())
+    print("Infinite Values  :", np.isinf(predictions).any())
 
     return (
         model,
