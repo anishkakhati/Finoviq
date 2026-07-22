@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import date
 
 from backend.database.save_prediction import save_prediction
+from backend.models.prediction_report import generate_prediction_report
 
 # ==========================================================
 # LOAD BEST MODEL
@@ -94,6 +95,13 @@ def predict_next_day(stock_data):
 
         model_version="Multi-Output Linear Regression"
 
+    )
+
+    generate_prediction_report(
+    company_id=stock_data["company_id"],
+    prediction=result,
+    model_name="Multi-Output Linear Regression",
+    confidence=0.95
     )
 
     # ==========================================================

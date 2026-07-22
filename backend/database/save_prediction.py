@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2 import errors
 
 from config.settings import (
     DB_HOST,
@@ -63,23 +64,33 @@ def save_prediction(
     );
     """
 
-    cursor.execute(
-        query,
-        (
-            company_id,
-            prediction_date,
-            float(predicted_open),
-            float(predicted_high),
-            float(predicted_low),
-            float(predicted_close),
-            float(confidence),
-            model_version
+    try:
+
+        cursor.execute(
+            query,
+            (
+                company_id,
+                prediction_date,
+                float(predicted_open),
+                float(predicted_high),
+                float(predicted_low),
+                float(predicted_close),
+                float(confidence),
+                model_version
+            )
         )
-    )
 
-    connection.commit()
+        connection.commit()
 
-    cursor.close()
-    connection.close()
+        print("\nPrediction saved successfully into PostgreSQL!")
 
-    print("\nPrediction saved successfully into PostgreSQL!")
+    except errors.UniqueViolation:
+
+        connection.rollback()
+
+        print("\nPrediction for today already exists in PostgreSQL.")
+
+    finally:
+
+        cursor.close()
+        connection.close()
